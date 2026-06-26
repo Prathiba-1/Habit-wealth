@@ -5,7 +5,7 @@ import { useSettings } from "@/hooks/useSettings";
 export function MetricGrid() {
   const { settings, loading } = useSettings();
 
-  const totalExpenses  = 0; // expenses come from useExpenses, not profile
+  // const totalExpenses  = 0; // expenses come from useExpenses, not profile
   const monthlySavings = settings.income_monthly - (settings.monthly_budget || 0);
   const savingsRate    = settings.income_monthly > 0
     ? Math.round((monthlySavings / settings.income_monthly) * 100)

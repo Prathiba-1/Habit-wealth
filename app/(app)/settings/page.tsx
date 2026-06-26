@@ -328,7 +328,7 @@ function EmergencySection({
             suffix="months"
           />
           <p className="text-[11px] text-ink-2 mt-2">
-            Most advisors recommend 3–6 months. 6+ if you're self-employed.
+            Most advisors recommend 3–6 months. 6+ if you are self-employed.
           </p>
         </div>
       )}
@@ -460,7 +460,7 @@ function AssistantSection({
               </span>
             </div>
             <div className="text-[12px] text-ink-1">
-              Hi, I'm{" "}
+              Hi, I am{" "}
               <span className="text-teal font-medium">
                 {draft.assistant_name.trim() || "Clara"}
               </span>

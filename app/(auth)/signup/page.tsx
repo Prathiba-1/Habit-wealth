@@ -89,7 +89,7 @@ export default function SignupPage() {
             </p>
           </div>
           <div className="w-full border-t border-[var(--border)] pt-4 text-[11px] text-ink-2">
-            Didn't get it? Check spam or{" "}
+            Did not get it? Check spam or{" "}
             <button
               onClick={() => { setSent(false); }}
               className="text-teal hover:opacity-80 transition-opacity"
@@ -155,7 +155,7 @@ export default function SignupPage() {
           <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
             placeholder="••••••••"
             className={`bg-bg-2 border rounded-md px-3 py-2 text-[13px] text-ink-0 outline-none placeholder:text-ink-2 transition-colors ${mismatch ? "border-red" : "border-[var(--border)] focus:border-teal"}`} />
-          {mismatch && <p className="text-[11px] text-red">Passwords don't match</p>}
+          {mismatch && <p className="text-[11px] text-red">Passwords do not match</p>}
         </div>
 
         <button onClick={handleSubmit}
