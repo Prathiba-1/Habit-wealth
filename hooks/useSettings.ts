@@ -18,6 +18,12 @@ export interface ProfileSettings {
   assistant_name: string;
 }
 
+interface SettingsHook {
+  settings: ProfileSettings;
+  updateSettings: (patch: Partial<ProfileSettings>) => void;
+  loading: boolean;
+}
+
 const MOCK_DEFAULTS: ProfileSettings = {
   full_name:                    "Arjun Sharma",
   email:                        "arjun@example.com",
@@ -33,7 +39,7 @@ const MOCK_DEFAULTS: ProfileSettings = {
 
 // ─── mock version ─────────────────────────────────────────────────────────────
 
-function useMockSettings() {
+function useMockSettings(): SettingsHook {
   const [settings, setSettings] = useState<ProfileSettings>(MOCK_DEFAULTS);
   function updateSettings(patch: Partial<ProfileSettings>) {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -43,7 +49,7 @@ function useMockSettings() {
 
 // ─── supabase version ─────────────────────────────────────────────────────────
 
-function useSupabaseSettings() {
+function useSupabaseSettings(): SettingsHook {
   const [settings, setSettings] = useState<ProfileSettings>(MOCK_DEFAULTS);
   const [loading, setLoading]   = useState(true);
 
@@ -60,16 +66,16 @@ function useSupabaseSettings() {
       ]);
 
       setSettings({
-        full_name:                    prefs?.full_name                     ?? "",
-        email:                        user.email                           ?? "",
-        income_monthly:               profile?.income_monthly              ?? 0,
-        monthly_budget:               profile?.monthly_budget              ?? 20000,
-        savings_target_pct:           profile?.savings_target_pct          ?? 20,
+        full_name:                    prefs?.full_name                      ?? "",
+        email:                        user.email                            ?? "",
+        income_monthly:               profile?.income_monthly               ?? 0,
+        monthly_budget:               profile?.monthly_budget               ?? 20000,
+        savings_target_pct:           profile?.savings_target_pct           ?? 20,
         emergency_fund_target_months: profile?.emergency_fund_target_months ?? 6,
-        debt_amount:                  profile?.debt_amount                  ?? 0,
-        debt_interest_rate:           profile?.debt_interest_rate           ?? 0,
-        currency:                     prefs?.currency                       ?? "INR",
-        assistant_name:               prefs?.assistant_name                 ?? "Clara",
+        debt_amount:                  profile?.debt_amount                   ?? 0,
+        debt_interest_rate:           profile?.debt_interest_rate            ?? 0,
+        currency:                     prefs?.currency                        ?? "INR",
+        assistant_name:               prefs?.assistant_name                  ?? "Clara",
       });
       setLoading(false);
     }
@@ -92,19 +98,17 @@ function useSupabaseSettings() {
     if (patch.savings_target_pct           !== undefined) profilePatch.savings_target_pct           = patch.savings_target_pct;
     if (patch.emergency_fund_target_months !== undefined) profilePatch.emergency_fund_target_months = patch.emergency_fund_target_months;
     if (patch.debt_amount                  !== undefined) profilePatch.debt_amount                  = patch.debt_amount;
-    if (patch.debt_interest_rate           !== undefined) profilePatch.debt_interest_rate           = patch.debt_interest_rate;
-    if (patch.full_name                    !== undefined) prefsPatch.full_name                      = patch.full_name;
-    if (patch.assistant_name               !== undefined) prefsPatch.assistant_name                 = patch.assistant_name;
-    if (patch.currency                     !== undefined) prefsPatch.currency                       = patch.currency;
+    if (patch.debt_interest_rate           !== undefined) profilePatch.debt_interest_rate            = patch.debt_interest_rate;
+    if (patch.full_name                    !== undefined) prefsPatch.full_name                       = patch.full_name;
+    if (patch.assistant_name               !== undefined) prefsPatch.assistant_name                  = patch.assistant_name;
+    if (patch.currency                     !== undefined) prefsPatch.currency                        = patch.currency;
 
     const ops: Promise<unknown>[] = [];
 
     if (Object.keys(profilePatch).length > 0)
       ops.push(sb.from("financial_profiles").update({ ...profilePatch, updated_at: new Date().toISOString() }).eq("user_id", user.id));
-
     if (Object.keys(prefsPatch).length > 0)
       ops.push(sb.from("user_preferences").update({ ...prefsPatch, updated_at: new Date().toISOString() }).eq("user_id", user.id));
-
     if (patch.email && patch.email !== "")
       ops.push(sb.auth.updateUser({ email: patch.email }));
 
@@ -114,11 +118,10 @@ function useSupabaseSettings() {
   return { settings, updateSettings, loading };
 }
 
-// ─── public API ──────────────────────────────────────────────────────────────
+// ─── public API ───────────────────────────────────────────────────────────────
 
-export function useSettings() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  if (USE_MOCK) return useMockSettings();
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useSupabaseSettings();
+export function useSettings(): SettingsHook {
+  const mock = useMockSettings();
+  const real = useSupabaseSettings();
+  return USE_MOCK ? mock : real;
 }

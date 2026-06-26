@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ChatMessage } from "@/lib/types";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+
+// ─── shared return type ───────────────────────────────────────────────────────
+
+interface ConversationHook {
+  messages: ChatMessage[];
+  isThinking: boolean;
+  sendMessage: (content: string) => Promise<void>;
+  clearConversation: () => void;
+}
 
 // ─── mock version ─────────────────────────────────────────────────────────────
 
@@ -15,20 +24,20 @@ const MOCK_REPLIES: Record<string, string> = {
   "What if I get a 20% raise?":
     "₹18,400 extra per month. If you bank it all, savings jump to ₹36,800/mo and your house goal moves to Aug 2026 — 4 months earlier. Want me to model how to split it between goals?",
   "Am I on track for my goal?":
-    "Yes — 38% to ₹20L with 14 months left. At ₹18,400/mo you need ₹12.4L more and you'll hit it 2 months before the deadline. Only risk: if dining keeps rising at 18%/quarter, that buffer disappears.",
+    "Yes — 38% to ₹20L with 14 months left. At ₹18,400/mo you need ₹12.4L more and you hit it 2 months before the deadline. Only risk: if dining keeps rising at 18%/quarter, that buffer disappears.",
 };
 
 const FALLBACK =
-  "Based on your profile — ₹92K income, 20% savings rate, 14 months to goal — you're in a solid position. Your most urgent fix is the emergency fund gap. Want a week-by-week action plan?";
+  "Based on your profile — ₹92K income, 20% savings rate, 14 months to goal — you are in a solid position. Your most urgent fix is the emergency fund gap. Want a week-by-week action plan?";
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "Hey! I'm Clara, your financial mentor. I've looked at your numbers — ₹92K income, 20% savings rate, 14 months to your house goal. You're doing well. What do you want to explore?",
+    "Hey! I am Clara, your financial mentor. I have looked at your numbers — ₹92K income, 20% savings rate, 14 months to your house goal. You are doing well. What do you want to explore?",
   timestamp: new Date().toISOString(),
 };
 
-function useMockConversation() {
+function useMockConversation(): ConversationHook {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isThinking, setIsThinking] = useState(false);
 
@@ -48,23 +57,26 @@ function useMockConversation() {
   return { messages, isThinking, sendMessage, clearConversation };
 }
 
-// ─── supabase + claude version ────────────────────────────────────────────────
+// ─── supabase + gemini version ────────────────────────────────────────────────
 
-function useSupabaseConversation() {
-  const [messages, setMessages]     = useState<ChatMessage[]>([]);
+function useSupabaseConversation(): ConversationHook {
+  const [messages, setMessages]   = useState<ChatMessage[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [initialised, setInitialised] = useState(false);
 
   const initConversation = useCallback(async () => {
-    const res  = await fetch("/api/conversation/init", { method: "POST" });
-    const data = await res.json();
-    if (data?.messages) setMessages(data.messages);
+    if (typeof window === "undefined") return;
+    try {
+      const res  = await fetch("/api/conversation/init", { method: "POST" });
+      const data = await res.json();
+      if (data?.messages) setMessages(data.messages);
+    } catch {
+      // silently fail during prerender
+    }
   }, []);
 
-  if (!initialised) {
-    setInitialised(true);
+  useEffect(() => {
     initConversation();
-  }
+  }, [initConversation]);
 
   const sendMessage = useCallback(async (content: string) => {
     setMessages((prev) => [...prev, { role: "user", content, timestamp: new Date().toISOString() }]);
@@ -102,7 +114,10 @@ function useSupabaseConversation() {
         }
       }
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong — please try again.", timestamp: new Date().toISOString() }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Something went wrong — please try again.", timestamp: new Date().toISOString() },
+      ]);
     } finally {
       setIsThinking(false);
     }
@@ -110,18 +125,20 @@ function useSupabaseConversation() {
 
   const clearConversation = useCallback(async () => {
     setMessages([]);
-    await fetch("/api/conversation/clear", { method: "POST" });
+    if (typeof window !== "undefined") {
+      await fetch("/api/conversation/clear", { method: "POST" });
+    }
     initConversation();
   }, [initConversation]);
 
   return { messages, isThinking, sendMessage, clearConversation };
 }
 
-// ─── public API ──────────────────────────────────────────────────────────────
+// ─── public API ───────────────────────────────────────────────────────────────
 
-export function useConversation() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  if (USE_MOCK) return useMockConversation();
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useSupabaseConversation();
+export function useConversation(): ConversationHook {
+  // Both hooks always called — no conditional hook calls
+  const mock = useMockConversation();
+  const real = useSupabaseConversation();
+  return USE_MOCK ? mock : real;
 }

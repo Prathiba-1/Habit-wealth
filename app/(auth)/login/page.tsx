@@ -41,7 +41,7 @@ export default function LoginPage() {
       .eq("user_id", data.user.id)
       .single();
 
-    if (!profile || profile.income_monthly === 0) {
+    if (!profile) {
       router.push("/onboarding");
     } else {
       router.push("/overview");
