@@ -9,8 +9,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        bg: {
+          0: "var(--bg0)",
+          1: "var(--bg1)",
+          2: "var(--bg2)",
+          3: "var(--bg3)",
+        },
+        teal: {
+          DEFAULT: "var(--teal)",
+          dim:    "var(--teal-dim)",
+          ghost:  "var(--teal-ghost)",
+          ghost2: "var(--teal-ghost2)",
+        },
+        red:   { DEFAULT: "var(--red)" },
+        amber: { DEFAULT: "var(--amber)" },
+        green: { DEFAULT: "var(--green)" },
+        ink: {
+          0: "var(--text0)",
+          1: "var(--text1)",
+          2: "var(--text2)",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)"],
+        mono: ["var(--font-mono)"],
+      },
+      borderRadius: {
+        sm: "var(--r-sm)",
+        md: "var(--r-md)",
+        lg: "var(--r-lg)",
+        xl: "var(--r-xl)",
       },
     },
   },
